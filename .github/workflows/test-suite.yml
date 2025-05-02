@@ -11,7 +11,7 @@ on:
 jobs:
   run-tests:
     name: Ejecutar Pruebas
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04  # Fijado a versión estable
 
     steps:
       - name: Checkout del repositorio
@@ -52,9 +52,20 @@ jobs:
         run: ls -alh
 
       - name: Subir reporte de pruebas
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v2  # Versión compatible con todos los runners
         with:
           name: test-results
           path: |
             summary.md
             test_logs/
+- name: Notificar a Telegram
+        if: always()
+        run: |
+          STATUS="✅ CI PASÓ"
+          if [ "${{ job.status }}" != "success" ]; then
+            STATUS="❌ CI FALLÓ"
+          fi
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d text="*${STATUS}*\nRepositorio: ${{ github.repository }}\nCommit: ${{ github.sha }}\nAutor: ${{ github.actor }}" \
+            -d parse_mode="Markdown"    
