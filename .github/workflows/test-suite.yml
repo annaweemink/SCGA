@@ -1,0 +1,53 @@
+name: CI - Ejecutar Pruebas
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  run-tests:
+    name: Ejecutar Pruebas
+    runs-on: ubuntu-latest
+
+    steps:
+      # Configurar el repositorio
+      - name: Checkout del repositorio
+        uses: actions/checkout@v3
+
+      # Configurar el entorno
+      - name: Configurar entorno
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      # Ejecutar pruebas en la carpeta tests/
+      - name: Ejecutar pruebas
+        run: |
+          chmod +x tests/*.sh
+          for test_script in tests/*.sh; do
+            echo "Ejecutando $test_script"
+            bash "$test_script" || echo "❌ Falló: $test_script" >> test_results.md
+          done
+
+      # Generar un reporte en formato Markdown
+      - name: Generar reporte de resultados
+        run: |
+          if [ -f test_results.md ]; then
+            echo "### Resultados de las pruebas" > summary.md
+            echo "" >> summary.md
+            cat test_results.md >> summary.md
+          else
+            echo "### Resultados de las pruebas" > summary.md
+            echo "✅ Todas las pruebas pasaron exitosamente." >> summary.md
+          fi
+
+      # Subir el reporte como un artefacto
+      - name: Subir reporte de pruebas
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: summary.md
