@@ -2,24 +2,23 @@ name: CI - Ejecutar Pruebas
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   run-tests:
-    name: Ejecutar Pruebas
+    name: Pruebas - ${{ github.sha }}
     runs-on: ubuntu-22.04
+    continue-on-error: false
 
     steps:
       - name: Checkout del repositorio
         uses: actions/checkout@v3
 
-      - name: Configurar entorno
+      - name: Configurar entorno (jq)
         run: |
-          sudo apt-get update
+          sudo apt-get update -y
           sudo apt-get install -y jq
 
       - name: Ejecutar pruebas
@@ -27,6 +26,7 @@ jobs:
           mkdir -p test_logs
           chmod +x tests/*.sh
           touch test_results.md
+
           for test_script in tests/*.sh; do
             echo "### Ejecutando $test_script" >> test_results.md
             if bash "$test_script" >> test_logs/$(basename "$test_script").log 2>&1; then
@@ -37,22 +37,22 @@ jobs:
             echo "" >> test_results.md
           done
 
-      - name: Generar reporte final
+      - name: Generar resumen markdown
         run: |
           echo "### Resultados de las pruebas" > summary.md
           echo "" >> summary.md
           cat test_results.md >> summary.md
 
-      - name: Mostrar resumen en GitHub UI
+      - name: Mostrar resumen en UI
         run: |
           echo "### Resultado de pruebas CI" >> $GITHUB_STEP_SUMMARY
           cat summary.md >> $GITHUB_STEP_SUMMARY
 
-      - name: Verificar archivos generados
+      - name: Verificar artefactos generados
         run: ls -alh
 
       - name: Subir reporte de pruebas
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.1.3
         with:
           name: test-results
           path: |
