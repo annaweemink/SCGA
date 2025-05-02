@@ -19,3 +19,11 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             -H "Content-Type: application/json" \
             -d '{"title":"Issue triggered by GitHub Actions","body":"Automated deployment triggered"}'
+
+- name: Crear issue si falla el CI
+  if: failure()
+  uses: peter-evans/create-issue-from-file@v4
+  with:
+    title: "❌ Fallo crítico en CI"
+    content-filepath: summary.md
+    labels: bug, CI
